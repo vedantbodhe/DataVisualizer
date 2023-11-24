@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton, QFileDialog
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+import openpyxl
+
 
 class VisualizationApp(QMainWindow):
     def __init__(self):
@@ -83,13 +85,13 @@ class VisualizationApp(QMainWindow):
             ax = self.currentFigure.add_subplot(111)
 
             if plotType == 'line':
-                ax.plot(self.currentData.iloc[:,0], self.currentData.iloc[:,1])
+                ax.plot(self.currentData.iloc[:, 0], self.currentData.iloc[:, 1])
             elif plotType == 'bar':
-                ax.bar(self.currentData.iloc[:,0], self.currentData.iloc[:,1])
+                ax.bar(self.currentData.iloc[:, 0], self.currentData.iloc[:, 1])
             elif plotType == 'scatter':
-                ax.scatter(self.currentData.iloc[:,0], self.currentData.iloc[:,1])
+                ax.scatter(self.currentData.iloc[:, 0], self.currentData.iloc[:, 1])
             elif plotType == 'hist':
-                ax.hist(self.currentData.iloc[:,0])
+                ax.hist(self.currentData.iloc[:, 0])
 
             ax.set_title(f'{plotType.capitalize()} Plot')
             ax.set_xlabel('X-axis')
@@ -117,11 +119,13 @@ class VisualizationApp(QMainWindow):
             if child.widget():
                 child.widget().deleteLater()
 
+
 def main():
     app = QApplication(sys.argv)
     ex = VisualizationApp()
     ex.show()
     sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
     main()
