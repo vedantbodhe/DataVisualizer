@@ -1,8 +1,9 @@
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QVBoxLayout, QWidget, QMenuBar
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+
 
 class VisualizationApp(QMainWindow):
     def __init__(self):
@@ -13,19 +14,27 @@ class VisualizationApp(QMainWindow):
         self.setWindowTitle('Data Visualization Tool')
         self.setGeometry(100, 100, 800, 600)
 
-        # Menu
-        mainMenu = self.menuBar()
-        fileMenu = mainMenu.addMenu('File')
+        # Main Layout
+        self.mainLayout = QVBoxLayout()
 
+        # Menu Bar
+        self.menuBar = QMenuBar()
+        fileMenu = self.menuBar.addMenu('File')
         openFile = QAction('Open CSV', self)
         openFile.triggered.connect(self.openFileDialog)
         fileMenu.addAction(openFile)
+        self.mainLayout.addWidget(self.menuBar)
 
         # Chart Display Area
         self.chartLayout = QVBoxLayout()
         self.widget = QWidget()
         self.widget.setLayout(self.chartLayout)
-        self.setCentralWidget(self.widget)
+        self.mainLayout.addWidget(self.widget)
+
+        # Set the main layout
+        centralWidget = QWidget()
+        centralWidget.setLayout(self.mainLayout)
+        self.setCentralWidget(centralWidget)
 
     def openFileDialog(self):
         options = QFileDialog.Options()
@@ -35,24 +44,27 @@ class VisualizationApp(QMainWindow):
             self.loadAndPlotData(fileName)
 
     def loadAndPlotData(self, fileName):
-        # Load data
-        data = pd.read_csv(fileName)
-        print(f"Data loaded: {data.head()}")  # Debugging: Print first few rows of the data
+        try:
+            # Load data
+            data = pd.read_csv(fileName)
+            print(f"Data loaded:\n {data.head()}")
 
-        # Clear previous plot if any
-        self.clearLayout(self.chartLayout)
+            # Clear previous plot if any
+            self.clearLayout(self.chartLayout)
 
-        # Create a figure and canvas for the plot
-        fig, ax = plt.subplots()
-        ax.plot(data.iloc[:,0], data.iloc[:,1])  # Assuming two columns of data
-        ax.set_title('Data Plot')
-        ax.set_xlabel('X-axis')
-        ax.set_ylabel('Y-axis')
+            # Create a figure and canvas for the plot
+            fig, ax = plt.subplots()
+            ax.plot(data.iloc[:,0], data.iloc[:,1])
+            ax.set_title('Data Plot')
+            ax.set_xlabel('X-axis')
+            ax.set_ylabel('Y-axis')
 
-        # Display plot
-        canvas = FigureCanvas(fig)
-        self.chartLayout.addWidget(canvas)
-        canvas.draw()
+            # Display plot
+            canvas = FigureCanvas(fig)
+            self.chartLayout.addWidget(canvas)
+            canvas.draw()
+        except Exception as e:
+            print(f"Error: {e}")
 
     def clearLayout(self, layout):
         while layout.count():
