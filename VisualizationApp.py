@@ -1,29 +1,52 @@
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QVBoxLayout, QWidget, QMenuBar
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton, QFileDialog
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-
+from matplotlib.figure import Figure
 
 class VisualizationApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.initUI()
+        self.currentData = None
+        self.currentFigure = None
 
     def initUI(self):
         self.setWindowTitle('Data Visualization Tool')
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 1000, 800)
 
         # Main Layout
         self.mainLayout = QVBoxLayout()
 
-        # Menu Bar
-        self.menuBar = QMenuBar()
-        fileMenu = self.menuBar.addMenu('File')
-        openFile = QAction('Open CSV', self)
-        openFile.triggered.connect(self.openFileDialog)
-        fileMenu.addAction(openFile)
-        self.mainLayout.addWidget(self.menuBar)
+        # Buttons for actions
+        self.openCSVButton = QPushButton('Open CSV File')
+        self.openCSVButton.clicked.connect(lambda: self.openFileDialog('CSV Files (*.csv)'))
+        self.mainLayout.addWidget(self.openCSVButton)
+
+        self.openExcelButton = QPushButton('Open Excel File')
+        self.openExcelButton.clicked.connect(lambda: self.openFileDialog('Excel Files (*.xlsx)'))
+        self.mainLayout.addWidget(self.openExcelButton)
+
+        self.linePlotButton = QPushButton('Line Plot')
+        self.linePlotButton.clicked.connect(lambda: self.plotData('line'))
+        self.mainLayout.addWidget(self.linePlotButton)
+
+        self.barPlotButton = QPushButton('Bar Plot')
+        self.barPlotButton.clicked.connect(lambda: self.plotData('bar'))
+        self.mainLayout.addWidget(self.barPlotButton)
+
+        self.scatterPlotButton = QPushButton('Scatter Plot')
+        self.scatterPlotButton.clicked.connect(lambda: self.plotData('scatter'))
+        self.mainLayout.addWidget(self.scatterPlotButton)
+
+        self.histogramButton = QPushButton('Histogram')
+        self.histogramButton.clicked.connect(lambda: self.plotData('hist'))
+        self.mainLayout.addWidget(self.histogramButton)
+
+        self.savePlotButton = QPushButton('Save Plot')
+        self.savePlotButton.clicked.connect(self.savePlot)
+        self.mainLayout.addWidget(self.savePlotButton)
 
         # Chart Display Area
         self.chartLayout = QVBoxLayout()
@@ -36,35 +59,57 @@ class VisualizationApp(QMainWindow):
         centralWidget.setLayout(self.mainLayout)
         self.setCentralWidget(centralWidget)
 
-    def openFileDialog(self):
+    def openFileDialog(self, fileType):
         options = QFileDialog.Options()
-        fileName, _ = QFileDialog.getOpenFileName(self, "Open CSV File", "", "CSV Files (*.csv)", options=options)
+        fileName, _ = QFileDialog.getOpenFileName(self, "Open File", "", fileType, options=options)
         if fileName:
-            print(f"Opening file: {fileName}")
-            self.loadAndPlotData(fileName)
+            self.loadData(fileName)
 
-    def loadAndPlotData(self, fileName):
+    def loadData(self, fileName):
+        if fileName.endswith('.csv'):
+            self.currentData = pd.read_csv(fileName)
+        elif fileName.endswith('.xlsx'):
+            self.currentData = pd.read_excel(fileName)
+        print(f"Data loaded: {self.currentData.head()}")
+
+    def plotData(self, plotType):
+        if self.currentData is None:
+            print("No data loaded")
+            return
+
         try:
-            # Load data
-            data = pd.read_csv(fileName)
-            print(f"Data loaded:\n {data.head()}")
-
-            # Clear previous plot if any
             self.clearLayout(self.chartLayout)
+            self.currentFigure = Figure()
+            ax = self.currentFigure.add_subplot(111)
 
-            # Create a figure and canvas for the plot
-            fig, ax = plt.subplots()
-            ax.plot(data.iloc[:,0], data.iloc[:,1])
-            ax.set_title('Data Plot')
+            if plotType == 'line':
+                ax.plot(self.currentData.iloc[:,0], self.currentData.iloc[:,1])
+            elif plotType == 'bar':
+                ax.bar(self.currentData.iloc[:,0], self.currentData.iloc[:,1])
+            elif plotType == 'scatter':
+                ax.scatter(self.currentData.iloc[:,0], self.currentData.iloc[:,1])
+            elif plotType == 'hist':
+                ax.hist(self.currentData.iloc[:,0])
+
+            ax.set_title(f'{plotType.capitalize()} Plot')
             ax.set_xlabel('X-axis')
             ax.set_ylabel('Y-axis')
 
-            # Display plot
-            canvas = FigureCanvas(fig)
+            canvas = FigureCanvas(self.currentFigure)
             self.chartLayout.addWidget(canvas)
             canvas.draw()
         except Exception as e:
             print(f"Error: {e}")
+
+    def savePlot(self):
+        if self.currentFigure is not None:
+            options = QFileDialog.Options()
+            filePath, _ = QFileDialog.getSaveFileName(self, "Save Plot", "", "PNG Files (*.png)", options=options)
+            if filePath:
+                self.currentFigure.savefig(filePath)
+                print(f"Plot saved: {filePath}")
+        else:
+            print("No plot to save")
 
     def clearLayout(self, layout):
         while layout.count():
